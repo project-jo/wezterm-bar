@@ -34,6 +34,9 @@ local config = {
     enabled = true,
     format = "%H:%M",
   },
+  hostname = {
+    enabled = true,
+  }
 }
 
 -- parsed config
@@ -116,6 +119,10 @@ M.apply_to_config = function(c, opts)
   C.clock = {
     enabled = config.clock.enabled,
     format = config.clock.format,
+  }
+
+  C.hostname = {
+    enabled = config.hostname.enabled
   }
 
   -- set the right-hand padding to 0 spaces, if the rounded style is active
@@ -301,6 +308,8 @@ wezterm.on(
         tabtitle = nerd_icons['vim']
     elseif startsWith(tabtitle, "~") then
         tabtitle = nerd_icons['terminal']
+    elseif startsWith(tabtitle, "wslhost.exe") then
+        tabtitle = nerd_icons['terminal']
     end
 
     local title = string.format(" %s%s%s%s", index, tabtitle, pane_count, C.p)
@@ -371,14 +380,28 @@ wezterm.on("update-status", function(window, _pane)
 
   window:set_left_status(leader .. mode .. divider)
 
+  local right_status = ""
+  if C.hostname.enabled  then
+    right_status = wezterm.hostname()
+  end
+
   if C.clock.enabled then
     local time = wezterm.time.now():format(C.clock.format)
+    if right_status ~= "" then
+        right_status = right_status .. " " .. time
+    else
+        right_status = time
+    end
+  end
+
+  if right_status ~= "" then
     window:set_right_status(wezterm.format({
       { Background = { Color = palette.tab_bar.background } },
       { Foreground = { Color = palette.ansi[6] } },
-      { Text = time },
+      { Text = right_status },
     }))
   end
+
 end)
 
 return M
